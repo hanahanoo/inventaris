@@ -49,8 +49,6 @@
                 ->where('status', 'active')
                 ->with('cartItems.item')
                 ->first();
-
-            $categories = \App\Models\Category::whereNotIn('name', ['Alat Dapur', 'Alat Kebersihan', 'Perabot', 'Peralatan Keamanan'])->get();
             $cartexceptactive = \App\Models\Cart::withCount('cartItems')
                 ->where('user_id', Auth::id())
                 ->where('status', '!=', 'active');
@@ -341,18 +339,13 @@
                                     </option>
                                 @endforeach
                             </select>
-                        @elseif($showCategoryDropdown && $assignedCategories->count() === 0)
-                            {{-- Jika tidak ada kategori yang di-assign, tampilkan semua kategori --}}
-                            @php
-                                $allCategories = \App\Models\Category::all();
-                            @endphp
-                            @if($allCategories->count() > 0)
+                            @if($categories->count() > 0)
                                 <select name="kategori"
                                         class="form-select border-0 bg-transparent text-secondary fw-medium"
                                         style="width: 150px; font-size: 14px; outline: none; box-shadow: none;"
                                         onchange="this.form.submit()">
                                     <option value="none">Pilih Kategori</option>
-                                    @foreach($allCategories as $category)
+                                    @foreach($categories as $category)
                                         <option value="{{ $category->name }}" {{ request('kategori') == $category->name ? 'selected' : '' }}>
                                             {{ $category->name }}
                                         </option>
