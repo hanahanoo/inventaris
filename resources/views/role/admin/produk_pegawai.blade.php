@@ -509,13 +509,31 @@ function resetFilters() {
                   </small>
                 @endif
               </div>
-              <div class="mb-3">
+             <div class="mb-3">
                 <label class="form-label fw-semibold">Masukkan / Scan Barcode</label>
-                <input type="text" name="barcode" class="form-control form-control-lg rounded-3 border-warning barcode-input"
-                       placeholder="Arahkan scanner ke sini..." required autofocus>
+
+                <input type="text"
+                      name="barcode"
+                      class="form-control form-control-lg rounded-3 border-warning barcode-input"
+                      placeholder="Hasil scan barcode"
+                      required
+                      autofocus>
+
                 <small class="text-muted">Tekan Enter setelah scan untuk menyimpan data.</small>
+
+                <!-- CAMERA -->
+                <div id="reader-{{ $item->id }}"
+                    class="mt-3"
+                    style="width:100%; display:none;"></div>
+
+                <!-- BUTTON -->
+                <button type="button"
+                        class="btn btn-outline-warning btn-sm mt-2 start-camera-btn"
+                        data-item-id="{{ $item->id }}">
+                  <i class="ri-camera-line me-1"></i> Scan Menggunakan Kamera
+                </button>
               </div>
-            </div>
+
 
             <div class="modal-footer">
               <button type="submit" class="btn btn-success submit-btn">
@@ -612,6 +630,8 @@ function resetFilters() {
 
 @endsection
 
+<script src="https://unpkg.com/html5-qrcode"></script>
+
 @push('scripts')
 <script>
 // Data global untuk JavaScript
@@ -626,5 +646,6 @@ window.PegawaiApp = {
     }
 };
 </script>
+<script src="https://unpkg.com/html5-qrcode"></script>
 <script src="{{ asset('js/admin-produk-pegawai.js') }}"></script>
 @endpush

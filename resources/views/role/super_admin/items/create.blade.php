@@ -67,6 +67,10 @@
                      class="form-control shadow-sm border-0"
                      placeholder="Scan / isi barcode barang"
                      value="{{ old('code') }}" style="display:none;border-left:4px solid #FF9800 !important;">
+                      <div id="barcodeReader"
+                          style="width:280px; display:none; margin-top:10px;">
+                      </div>
+
               @error('code') <small class="text-danger">{{ $message }}</small> @enderror
             </div>
           </div>
@@ -139,20 +143,64 @@
 {{-- ======================== --}}
 {{-- 🌈 SCRIPT TAMBAHAN --}}
 {{-- ======================== --}}
+<script src="https://unpkg.com/html5-qrcode"></script>
 <script>
-document.getElementById('toggleBarcode').addEventListener('change', function () {
-  const barcodeInput = document.getElementById('barcodeInput');
-  barcodeInput.style.display = this.checked ? 'block' : 'none';
+let html5QrCode;
+
+const toggle = document.getElementById('toggleBarcode');
+const barcodeInput = document.getElementById('barcodeInput');
+const reader = document.getElementById('barcodeReader');
+
+// default: SCAN MODE
+startScan();
+
+toggle.addEventListener('change', function () {
+  if (this.checked) {
+    // MODE MANUAL
+    barcodeInput.style.display = 'block';
+    barcodeInput.removeAttribute('readonly');
+    reader.style.display = 'none';
+    if (html5QrCode) html5QrCode.stop();
+  } else {
+    // MODE SCAN
+    barcodeInput.style.display = 'none';
+    barcodeInput.setAttribute('readonly', true);
+    reader.style.display = 'block';
+    startScan();
+  }
 });
 
+function startScan() {
+  reader.style.display = 'block';
+  html5QrCode = new Html5Qrcode("barcodeReader");
+
+  html5QrCode.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 220 },
+    (decodedText) => {
+      barcodeInput.value = decodedText;
+
+      // tampilkan input biar kelihatan hasilnya
+      barcodeInput.style.display = 'block';
+
+      html5QrCode.stop();
+      reader.style.display = 'none';
+    }
+  ).catch(err => {
+    console.log(err);
+  });
+}
+
+// validasi ukuran gambar (punyamu udah oke)
 document.getElementById('image').addEventListener('change', function() {
   const file = this.files[0];
   if (file && file.size > 1 * 1024 * 1024) {
-    alert('Ukuran gambar melebihi 1 MB! Silakan pilih gambar lain.');
+    alert('Ukuran gambar melebihi 1 MB!');
     this.value = '';
   }
 });
 </script>
+
 
 {{-- ======================== --}}
 {{-- 🎨 STYLE TAMBAHAN --}}
@@ -211,4 +259,5 @@ document.getElementById('image').addEventListener('change', function() {
   }
 }
 </style>
+
 @endsection

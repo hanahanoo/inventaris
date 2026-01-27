@@ -28,7 +28,7 @@ class Item_inController extends Controller
             ]);
         } elseif ($request->filled('start_date')) {
             $query->whereDate('created_at', '>=', $request->start_date);
-        } elseif ($request->filled('end_date')) {
+        } elseif ($request->filled('end_date')) {   
             $query->whereDate('created_at', '<=', $request->end_date);
         }
 

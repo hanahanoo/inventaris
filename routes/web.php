@@ -182,7 +182,7 @@ Route::middleware(['auth', 'role:admin'])
 
     // Guest Management
     Route::controller(SearchController::class)->group(function () {
-        Route::get('/guests/search', 'searchGuests')->name('guests.search');
+        Route::get('/guests/search', 'searchGuests')->name('    .search');
     });
     Route::resource('guests', GuestController::class)->except('show');
 

@@ -600,3 +600,42 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 });
+
+let activeScanner = null;
+
+document.addEventListener('click', function (e) {
+  if (e.target.closest('.start-camera-btn')) {
+    const btn = e.target.closest('.start-camera-btn');
+    const itemId = btn.dataset.itemId;
+
+    const readerId = `reader-${itemId}`;
+    const reader = document.getElementById(readerId);
+    const input = btn.closest('.modal-body').querySelector('.barcode-input');
+
+    reader.style.display = 'block';
+
+    if (activeScanner) {
+      activeScanner.stop();
+    }
+
+    activeScanner = new Html5Qrcode(readerId);
+
+    activeScanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      (decodedText) => {
+        input.value = decodedText;
+        reader.style.display = 'none';
+        activeScanner.stop();
+      }
+    ).catch(err => console.log(err));
+  }
+});
+
+// stop kamera kalau modal ditutup
+document.addEventListener('hidden.bs.modal', function () {
+  if (activeScanner) {
+    activeScanner.stop();
+    activeScanner = null;
+  }
+});

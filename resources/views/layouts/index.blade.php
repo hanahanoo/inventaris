@@ -185,6 +185,8 @@
     <!-- Page JS -->
     <script src="{{asset('assets/js/dashboards-analytics.js')}}"></script>
 
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
     @stack('scripts')
 
     <!-- ===================== -->

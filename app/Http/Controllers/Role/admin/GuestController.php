@@ -14,7 +14,7 @@ class GuestController extends Controller
     public function index(Request $request)
     {
         $query = $request->input('q');
-
+        
         $guests = Guest::with('creator')
             ->when($query, function ($q) use ($query) {
                 $keywords = explode(' ', $query); // pisah tiap kata, agar makin fleksibel

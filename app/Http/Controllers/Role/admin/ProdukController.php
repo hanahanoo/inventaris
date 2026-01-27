@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Auth;
 
 class ProdukController extends Controller
 {
@@ -70,6 +71,12 @@ class ProdukController extends Controller
             $search = $request->q;
             $query->where('name', 'like', "%{$search}%");
         }
+        // Ambil kategori yang di-assign ke user (jika ada)
+        $assignedCategories = Auth::check() ? Auth::user()->getAssignedCategories() : collect();
+
+        // Jika user memiliki kategori yang di-assign, gunakan hanya kategori tersebut
+        // Jika tidak, tampilkan semua kategori
+        $categories = $assignedCategories->isNotEmpty() ? $assignedCategories : Category::all();
 
         // Sorting berdasarkan parameter
         if ($request->has('sort')) {
@@ -126,7 +133,9 @@ class ProdukController extends Controller
             'cartItems',
             'releaseCountThisWeek',
             'maxReleasePerWeek',
-            'isLimitReached'
+            'isLimitReached',
+            'categories',
+            'assignedCategories'
         ));
     }
 

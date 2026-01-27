@@ -369,10 +369,26 @@ function resetFilters() {
               <small class="text-muted">Maksimum stok: {{ $item->stock }}</small>
             </div>
             <div class="mb-3">
-              <label class="form-label fw-semibold">Masukkan / Scan Barcode</label>
-              <input type="text" name="barcode" class="form-control form-control-lg rounded-3 border-warning"
-                     placeholder="Arahkan scanner ke sini..." required>
-              <small class="text-muted">Tekan Enter setelah scan untuk menyimpan data.</small>
+              <label class="form-label fw-semibold">Scan Barcode</label>
+
+              <!-- CAMERA -->
+              <div id="reader-{{ $item->id }}"
+                  style="display:none; width:100%;"></div>
+
+              <!-- INPUT BARCODE -->
+              <input type="text"
+                    name="barcode"
+                    class="form-control barcode-input"
+                    placeholder="Hasil scan barcode"
+                    readonly
+                    required>
+
+              <!-- BUTTON START CAMERA -->
+              <button type="button"
+                      class="btn btn-outline-warning mt-2 start-camera-btn"
+                      data-item-id="{{ $item->id }}">
+                <i class="ri-camera-line me-1"></i> Scan Kamera
+              </button>
             </div>
           </div>
           <div class="modal-footer">
@@ -481,7 +497,8 @@ function resetFilters() {
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="{{ asset('js/guest-cart.js') }}"></script>
-
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="{{ asset('js/admin-produk-pegawai.js') }}"></script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const releaseForm = document.getElementById("releaseForm");

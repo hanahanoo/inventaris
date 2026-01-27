@@ -66,6 +66,19 @@
           @enderror
         </div>
 
+        {{-- Alamat Supplier --}}
+        <div class="mb-4">
+          <label for="address" class="form-label fw-semibold text-dark mb-2">Alamat</label>
+          <input type="text" id="address" name="address"
+                 class="form-control form-control-lg border-0 rounded-3 shadow-sm px-3 py-2"
+                 value="{{ $supplier->address }}"
+                 placeholder="Alamat supplier"
+                 style="background:#fff; border-left:4px solid #FF9800 !important;">
+          @error('address')
+            <small class="text-danger">{{ $message }}</small>
+          @enderror
+        </div>
+
         {{-- Tombol Aksi --}}
         <div class="d-flex justify-content-end gap-2 pt-2">
           <button type="submit" class="btn rounded-pill text-white fw-semibold shadow-sm px-4 py-2 hover-glow"

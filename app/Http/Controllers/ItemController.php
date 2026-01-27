@@ -70,7 +70,7 @@ class ItemController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name'        => 'required|string|max:255',
+            'name'        => 'required|string|max:255|unique:items,name',
             'code'        => 'nullable|string|max:255|unique:items,code',
             'category_id' => 'required|exists:categories,id',
             'unit_id'     => 'required|exists:units,id',
@@ -79,7 +79,7 @@ class ItemController extends Controller
             'image'       => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        $validated['created_by'] = Auth::id();
+        $validated['created_by'] = Auth::id();                      
         $validated['stock'] = 0;
 
         if ($request->hasFile('image')) {

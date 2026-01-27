@@ -121,6 +121,7 @@ document.getElementById('supplierImportForm').addEventListener('submit', functio
           <tr>
             <th class="text-start ps-4">Nama Supplier</th>
             <th>Kontak</th>
+            <th>Alamat</th>
             <th width="120px">Aksi</th>
           </tr>
         </thead>
@@ -132,6 +133,7 @@ document.getElementById('supplierImportForm').addEventListener('submit', functio
               <i class="ri ri-store-2-line me-2 fs-5" style="color:#FFB300;"></i> {{ $supplier->name }}
             </td>
             <td class="text-center">{{ $supplier->contact ?? '-' }}</td>
+            <td class="text-center">{{ $supplier->address ?? '-' }}</td>
             <td class="text-center position-relative">
               <div class="dropdown">
                 <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown" aria-expanded="false">
