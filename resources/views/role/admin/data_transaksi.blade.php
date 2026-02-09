@@ -109,7 +109,7 @@
                           <td>{{ $item->scanned_at ? \Carbon\Carbon::parse($item->scanned_at)->format('d M Y H:i') : '-' }}</td>
                           <td>
                             <button class="btn btn-sm btn-outline-warning rounded-pill me-1 fw-semibold smooth-btn"
-                                    data-bs-toggle="modal" data-bs-target="#refundModal"
+                                    data-bs-toggle="modal" data-bs-target="#refundModal-{{ $item->id }}"
                                     data-cart-item-id="{{ $item->id }}" data-item-name="{{ $item->item->name }}"
                                     data-item-id="{{ $item->item->id }}" data-max-qty="{{ $item->quantity }}">
                               🔄 Refund
@@ -227,7 +227,9 @@
 {{-- ===================== --}}
 {{-- MODAL REFUND PEGAWAI --}}
 {{-- ===================== --}}
-<div class="modal fade" id="refundModal" tabindex="-1" aria-hidden="true">
+@foreach($finishedCarts as $cart)
+@foreach($cart->cartItems as $item)
+<div class="modal fade" id="refundModal-{{ $item->id }}" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow-lg rounded-4">
       <form id="refundFormPegawai" action="{{ route('admin.pegawai.refund') }}" method="POST">
@@ -241,15 +243,15 @@
           <input type="hidden" name="item_id" id="refundItemId">
           <div class="mb-3">
             <label class="form-label fw-semibold">Nama Barang</label>
-            <input type="text" class="form-control rounded-3" id="refundItemName" readonly>
+            <input type="text" class="form-control rounded-3" id="refundItemName" value="{{ $item->item->name }}" readonly>
           </div>
           <div class="mb-3">
             <label class="form-label fw-semibold">Jumlah Refund <span class="text-danger">*</span></label>
-            <input type="number" name="qty" id="refundQty" class="form-control rounded-3" min="1" required
+            <input type="number" name="qty" id="refundQty" class="form-control rounded-3" min="1" value="{{ $item->quantity }}" required
                    oninput="validateRefundQty(this)">
             <div class="form-text">
               <span class="text-muted">Maksimal refund: </span>
-              <span id="maxQty" class="fw-bold text-warning">0</span>
+              <span id="maxQty" class="fw-bold text-warning">{{ $item->quantity }}</span>
               <span id="qtyError" class="text-danger small d-none">❌ Jumlah refund melebihi batas maksimal</span>
             </div>
           </div>
@@ -269,7 +271,8 @@
     </div>
   </div>
 </div>
-
+@endforeach
+@endforeach
 {{-- MODAL REFUND GUEST --}}
 <div class="modal fade" id="refundModalGuest" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
