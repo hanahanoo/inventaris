@@ -138,6 +138,43 @@
       height: 180px; /* versi mobile sedikit lebih kecil */
     }
   }
+  /* Container untuk membungkus list produk agar bisa dioverlay */
+  #product-list-container {
+      position: relative;
+      min-height: 200px;
+  }
+
+  /* Overlay Loader */
+  #loader-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.7); /* Background putih transparan */
+      display: none; /* Sembunyi secara default */
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      border-radius: 1rem;
+  }
+
+  /* Spinner Kustom Warna Orange (Tema lu) */
+  .custom-loader {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #FFF3E0;
+      border-bottom-color: #FF9800;
+      border-radius: 50%;
+      display: inline-block;
+      box-sizing: border-box;
+      animation: rotation 1s linear infinite;
+  }
+
+  @keyframes rotation {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+  }
 </style>
 
 <!-- 🧭 Breadcrumb -->
@@ -223,69 +260,26 @@
   </div>
 @endif
 
-@if(isset($search) && $search)
+<!-- @if(isset($search) && $search)
   <div class="alert alert-info border-0 shadow-sm py-2 mb-4">
     <i class="bi bi-search me-2"></i> Hasil pencarian untuk:
     <strong class="text-dark">{{ $search }}</strong>
   </div>
-@endif
+@endif -->
 
 <!-- 📦 Grid Produk -->
-<div class="row gy-4">
-  @forelse ($items as $item)
-    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-      <div class="card product-card position-relative">
-        <div class="position-relative">
-          <img src="{{ asset('storage/' . $item->image) }}" alt="{{ $item->name }}">
-          @if ($item->stock == 0)
-            <span class="badge-status bg-danger text-white">Habis</span>
-          @elseif ($item->stock < 5)
-            <span class="badge-status bg-warning text-dark">Menipis</span>
-          @endif
+<div id="product-list-container">
+    <div id="loader-overlay">
+        <div class="text-center">
+            <span class="custom-loader"></span>
+            <p class="mt-2 fw-bold text-dark">Mencari...</p>
         </div>
-
-        <div class="card-body d-flex flex-column justify-content-between">
-          <h5 class="fw-semibold mb-2 text-truncate">{{ $item->name }}</h5>
-          <p class="small mb-1"><i class="bi bi-tag me-1"></i> Kategori:
-            <span class="fw-semibold text-dark">{{ $item->category->name ?? '-' }}</span>
-          </p>
-          <p class="small mb-3"><i class="bi bi-box me-1"></i> Stok:
-            <span class="fw-semibold {{ $item->stock == 0 ? 'text-danger' : 'text-success' }}">{{ $item->stock }}</span>
-          </p>
-
-          <form action="{{ route('pegawai.permintaan.create') }}" method="POST" class="mt-auto">
-            @csrf
-            <input type="hidden" name="items[0][item_id]" value="{{ $item->id }}">
-            <div class="d-flex align-items-center justify-content-between">
-              <div class="input-group" style="max-width: 110px;">
-                <input type="number" name="items[0][quantity]" class="form-control text-center border-warning"
-                  value="1" min="1" {{ $item->stock == 0 ? 'disabled' : '' }}>
-              </div>
-              <button type="submit"
-                class="btn btn-sm btn-primary ms-2 d-flex align-items-center shadow-sm"
-                {{ $item->stock == 0 ? 'disabled' : '' }}>
-                <i class="bi bi-cart-plus me-1"></i> Ajukan
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
     </div>
-  @empty
-    <div class="col-12 text-center py-5">
-      <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
-      <p class="text-muted mb-0">Tidak ada produk ditemukan.</p>
-    </div>
-  @endforelse
-</div>
 
-@if ($items instanceof \Illuminate\Pagination\LengthAwarePaginator)
-  {{-- PAGINATION --}}
-  <div class="mt-4 d-flex justify-content-center">
-    {{ $items->links('pagination::bootstrap-5') }}
-  </div>
+    <div id="ajax-content">
+        @include('role.pegawai.partials.product_list')
+    </div>
 </div>
-@endif
 
 
 @endsection
@@ -295,4 +289,68 @@ function applySortFilter(sortValue) {
     url.searchParams.set('sort', sortValue);
     window.location.href = url.toString();
 }
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.querySelector('input[name="q"]');
+    const categorySelect = document.querySelector('select[name="category_id"]');
+    const sortFilter = document.getElementById('sortFilter');
+    const ajaxContent = document.getElementById('ajax-content'); // Container isi produk
+    const loader = document.getElementById('loader-overlay');    // Overlay loader
+    const form = document.getElementById('search-form');
+
+    let timeout = null;
+
+    const fetchProducts = (targetUrl = null) => {
+        // Tampilkan loader
+        loader.style.display = 'flex';
+        ajaxContent.style.filter = 'blur(2px)'; // Efek blur biar makin keren
+
+        let url;
+        if (targetUrl) {
+            url = new URL(targetUrl);
+        } else {
+            url = new URL(form.action);
+            url.searchParams.set('q', searchInput.value);
+            if(categorySelect) url.searchParams.set('category_id', categorySelect.value);
+            url.searchParams.set('sort', sortFilter.value);
+        }
+
+        fetch(url, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.text())
+        .then(html => {
+            // Sembunyikan loader & hilangkan blur
+            loader.style.display = 'none';
+            ajaxContent.style.filter = 'none';
+            
+            ajaxContent.innerHTML = html;
+            window.history.pushState({}, '', url);
+        })
+        .catch(err => {
+            console.error(err);
+            loader.style.display = 'none';
+            ajaxContent.style.filter = 'none';
+        });
+    };
+
+    // Event Input Search (Debounce)
+    searchInput.addEventListener('keyup', () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => fetchProducts(), 500);
+    });
+
+    // Event Kategori & Sort
+    if(categorySelect) categorySelect.addEventListener('change', () => fetchProducts());
+    window.applySortFilter = () => fetchProducts();
+
+    // AJAX Pagination
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('.pagination a');
+        if (link) {
+            e.preventDefault();
+            fetchProducts(link.href);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    });
+});
 </script>

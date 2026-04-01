@@ -131,33 +131,49 @@ class ItemoutController extends Controller
         ]);
 
         $cart = Cart::with('cartItems')->findOrFail($cartId);
-        $items = $request->input('items', []);
+        $scannedItems = $request->input('items', []);
 
         DB::beginTransaction();
 
         try {
-            foreach ($items as $scannedItem) {
-                $item = Item::where('id', $scannedItem['id'])->lockForUpdate()->first();
-                if (!$item) continue;
+            $insufficientItems = [];
 
-                $qty = (int) $scannedItem['quantity'];
+            // 1. VALIDASI STOK SEMUA BARANG (Loop Pertama)
+            foreach ($scannedItems as $sItem) {
+                $item = Item::where('id', $sItem['id'])->lockForUpdate()->first();
+                $qty = (int) $sItem['quantity'];
 
-                // Cek stok tersedia
-                if ($item->stock < $qty) {
-                    DB::rollBack();
-                    return response()->json([
-                        'success' => false,
-                        'message' => "Stok tidak cukup untuk item {$item->name} (tersisa: {$item->stock})."
-                    ], 422);
+                if (!$item || $item->stock < $qty) {
+                    $insufficientItems[] = [
+                        'name' => $item ? $item->name : 'Unknown Item',
+                        'requested' => $qty,
+                        'available' => $item ? $item->stock : 0
+                    ];
                 }
+            }
 
-                // Cek apakah item_out sudah ada (untuk menghindari duplikasi)
+            // Jika ada yang kurang, stop di sini dan kirim SEMUA daftar barangnya
+            if (count($insufficientItems) > 0) {
+                DB::rollBack();
+                $itemNames = collect($insufficientItems)->pluck('name')->implode(', ');
+                
+                return response()->json([
+                    'success' => false,
+                    'error_type' => 'INSUFFICIENT_STOCK',
+                    'problem_items' => $insufficientItems, 
+                    'message' => "Stok untuk barang berikut tidak mencukupi: " . $itemNames
+                ], 422);
+            }
+            foreach ($scannedItems as $sItem) {
+                $item = Item::find($sItem['id']);
+                $qty = (int) $sItem['quantity'];
+
+                // Cek duplikasi record item_out
                 $existingItemOut = Item_out::where('cart_id', $cart->id)
                     ->where('item_id', $item->id)
                     ->first();
 
                 if (!$existingItemOut) {
-                    // Buat record item_out hanya jika belum ada
                     $itemOut = new Item_out();
                     $itemOut->cart_id = $cart->id;
                     $itemOut->item_id = $item->id;
@@ -166,23 +182,20 @@ class ItemoutController extends Controller
                     $itemOut->released_at = now();
                     $itemOut->approved_by = Auth::id();
                     $itemOut->save();
+                    
+                    // Kurangi stok barang di sini (Opsional, tergantung flow abang)
+                    // $item->decrement('stock', $qty); 
                 }
 
                 // Update scanned_at pada cart_item
-                $cartItem = CartItem::where('cart_id', $cart->id)
+                CartItem::where('cart_id', $cart->id)
                     ->where('item_id', $item->id)
-                    ->first();
-
-                if ($cartItem && !$cartItem->scanned_at) {
-                    $cartItem->update(['scanned_at' => now()]);
-                }
+                    ->whereNull('scanned_at')
+                    ->update(['scanned_at' => now()]);
             }
 
             // ✅ PERBAIKAN: Hanya update picked_up_at, status tetap 'approved'
-            $cart->update([
-                'picked_up_at' => now()
-                // Tidak mengubah status karena 'completed' tidak ada di ENUM
-            ]);
+           $cart->update(['picked_up_at' => now()]);
 
             DB::commit();
 
@@ -201,6 +214,50 @@ class ItemoutController extends Controller
         }
     }
 
+    public function reject(Request $request, $cartId)
+    {
+        Log::info("🚀 REJECT PROCESS START - Cart ID: {$cartId}");
+        DB::beginTransaction();
+        try {
+            $cart = Cart::with('cartItems.item')->findOrFail($cartId);
+            $rejectedNames = [];
+
+            foreach ($cart->cartItems as $cartItem) {
+                if ($cartItem->item->stock < $cartItem->quantity) {
+                    $rejectedNames[] = $cartItem->item->name;
+                    
+                    DB::table('cart_items')->where('id', $cartItem->id)->update([
+                        'status' => 'rejected',
+                        'rejection_reason' => 'Stok tidak mencukupi saat release.',
+                        'scanned_at' => null,
+                        'updated_at' => now()
+                    ]);
+                }
+            }
+
+            $remainingItems = DB::table('cart_items')
+                ->where('cart_id', $cartId)
+                ->where('status', '!=', 'rejected')
+                ->count();
+
+            if ($remainingItems == 0) {
+                $cart->update(['status' => 'rejected']);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'can_continue' => $remainingItems > 0, // Flag untuk JS
+                'message' => "Barang [" . implode(', ', $rejectedNames) . "] telah ditolak karena stok habis. " . 
+                            ($remainingItems > 0 ? "Silakan proses sisa barang lainnya." : "Seluruh keranjang telah ditutup.")
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
 
     /**
      * Cek apakah semua item sudah discan.

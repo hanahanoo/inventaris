@@ -15,7 +15,7 @@
       <nav aria-label="breadcrumb">
         <ol class="breadcrumb mb-0">
           <li class="breadcrumb-item">
-            <a href="{{ route('dashboard') }}" class="fw-semibold text-decoration-none" style="color:#FF9800;">
+            <a href="{{ route('admin.dashboard') }}" class="fw-semibold text-decoration-none" style="color:#FF9800;">
               Dashboard
             </a>
           </li>

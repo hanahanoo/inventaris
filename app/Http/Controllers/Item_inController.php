@@ -7,6 +7,7 @@ use App\Models\Item;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class Item_inController extends Controller
@@ -83,30 +84,88 @@ class Item_inController extends Controller
     // =======================================================
     public function store(Request $request)
     {
+        // Validasi dasar untuk multiple input
         $request->validate([
-            'item_id'     => 'required|exists:items,id',
-            'quantity'    => 'required|integer|min:1',
-            'supplier_id' => 'required|exists:suppliers,id',
-            'expired_at'  => 'nullable|date|after_or_equal:today',
+            'items'                  => 'required|array|min:1',
+            'items.*.item_id'        => 'required|exists:items,id',
+            'items.*.quantity'       => 'required|integer|min:1',
+            'items.*.supplier_id'    => 'required|exists:suppliers,id',
+            'items.*.expired_at'     => 'nullable|date|after_or_equal:today',
+        ], [
+            'items.required'              => 'Minimal harus ada 1 item',
+            'items.*.item_id.required'    => 'Barang harus dipilih',
+            'items.*.quantity.required'   => 'Jumlah harus diisi',
+            'items.*.quantity.min'        => 'Jumlah minimal 1',
+            'items.*.supplier_id.required'=> 'Supplier harus dipilih',
+            'items.*.expired_at.after_or_equal' => 'Tanggal kedaluwarsa harus hari ini atau setelahnya',
         ]);
 
-        $item_in = Item_in::create([
-            'item_id'     => $request->item_id,
-            'quantity'    => $request->quantity,
-            'supplier_id' => $request->supplier_id,
-            'expired_at'  => $request->expired_at ?? null,
-            'created_by'  => Auth::id(),
-        ]);
+        // ========================================
+        // 🔍 VALIDASI CUSTOM: Barang sama harus supplier berbeda
+        // ========================================
+        $itemSupplierMap = [];
+        
+        foreach ($request->items as $index => $itemData) {
+            $itemId = $itemData['item_id'];
+            $supplierId = $itemData['supplier_id'];
+            
+            // Cek apakah barang ini sudah pernah diinput dengan supplier yang sama
+            if (isset($itemSupplierMap[$itemId])) {
+                if (in_array($supplierId, $itemSupplierMap[$itemId])) {
+                    // Barang yang sama dengan supplier yang sama sudah ada
+                    throw ValidationException::withMessages([
+                        'items.' . $index . '.supplier_id' => 
+                            'Barang yang sama tidak boleh dari supplier yang sama. Silakan pilih supplier berbeda.'
+                    ]);
+                }
+                // Tambahkan supplier ke list
+                $itemSupplierMap[$itemId][] = $supplierId;
+            } else {
+                // Inisialisasi array untuk item ini
+                $itemSupplierMap[$itemId] = [$supplierId];
+            }
+        }
 
-        // Update stok barang
-        $item = Item::findOrFail($request->item_id);
-        $item->stock += $request->quantity;
-        $item->save();
+        // ========================================
+        // 💾 SIMPAN DATA
+        // ========================================
+        DB::beginTransaction();
+        
+        try {
+            $successCount = 0;
+            
+            // Loop setiap item yang diinput
+            foreach ($request->items as $itemData) {
+                // Create item in
+                Item_in::create([
+                    'item_id'     => $itemData['item_id'],
+                    'quantity'    => $itemData['quantity'],
+                    'supplier_id' => $itemData['supplier_id'],
+                    'expired_at'  => $itemData['expired_at'] ?? null,
+                    'created_by'  => Auth::id(),
+                ]);
 
-        return redirect()->route('super_admin.item_ins.index')
-            ->with('success', 'Data berhasil ditambahkan & stok diperbarui');
+                // Update stok barang
+                $item = Item::findOrFail($itemData['item_id']);
+                $item->stock += $itemData['quantity'];
+                $item->save();
+                
+                $successCount++;
+            }
+
+            DB::commit();
+            
+            return redirect()->route('super_admin.item_ins.index')
+                ->with('success', "Berhasil menambahkan {$successCount} data barang masuk & stok diperbarui");
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
-
     // =======================================================
     // ✏️ EDIT
     // =======================================================

@@ -326,32 +326,21 @@
                         style="max-width: 600px; width: 100%; transition: all 0.2s ease;"
                         id="search-form"
                     >
-                        @if($showCategoryDropdown && $assignedCategories->count() > 0)
-                            {{-- Dropdown kategori HANYA yang di-assign --}}
-                            <select name="kategori"
+                       @if($showCategoryDropdown && $assignedCategories->count() > 0)
+                            <select name="category_id"
                                     class="form-select border-0 bg-transparent text-secondary fw-medium"
-                                    style="width: 150px; font-size: 14px; outline: none; box-shadow: none;"
+                                    style="width: 150px; font-size: 14px;"
                                     onchange="this.form.submit()">
-                                <option value="none">Pilih Kategori</option>
+
+                                <option value="">Semua Kategori</option>
+
                                 @foreach($assignedCategories as $category)
-                                    <option value="{{ $category->name }}" {{ request('kategori') == $category->name ? 'selected' : '' }}>
+                                    <option value="{{ $category->id }}"
+                                        {{ request('category_id') == $category->id ? 'selected' : '' }}>
                                         {{ $category->name }}
                                     </option>
                                 @endforeach
                             </select>
-                            @if($categories->count() > 0)
-                                <select name="kategori"
-                                        class="form-select border-0 bg-transparent text-secondary fw-medium"
-                                        style="width: 150px; font-size: 14px; outline: none; box-shadow: none;"
-                                        onchange="this.form.submit()">
-                                    <option value="none">Pilih Kategori</option>
-                                    @foreach($categories as $category)
-                                        <option value="{{ $category->name }}" {{ request('kategori') == $category->name ? 'selected' : '' }}>
-                                            {{ $category->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            @endif
                         @endif
 
                         {{-- Icon search --}}

@@ -167,6 +167,7 @@ Route::middleware(['auth', 'role:admin'])
         Route::post('/itemout/scan/{cart}', 'scan')->name('itemout.scan');
         Route::get('/itemout/check-all-scanned/{cart}', 'checkAllScanned')->name('itemout.checkAllScanned');
         Route::post('/itemout/release/{cart}', 'release')->name('itemout.release');
+        Route::post('/itemout/reject/{cartId}', 'reject')->name('itemout.reject');
     });
 
     // Request & Cart

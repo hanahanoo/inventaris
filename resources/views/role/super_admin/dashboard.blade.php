@@ -8,7 +8,7 @@
   <div class="bg-white shadow-sm rounded-4 px-4 py-3 mb-4 d-flex flex-wrap align-items-center justify-content-between animate__animated animate__fadeInDown smooth-fade">
     <div class="d-flex align-items-center gap-2 flex-wrap">
       <i class="bi bi-speedometer2 fs-5" style="color:#FF9800;"></i>
-      <a href="{{ route('dashboard') }}" class="breadcrumb-link fw-semibold text-decoration-none" style="color:#FF9800;">
+      <a class="breadcrumb-link fw-semibold text-decoration-none" style="color:#FF9800;">
         Dashboard
       </a>
       <span class="text-muted">/</span>

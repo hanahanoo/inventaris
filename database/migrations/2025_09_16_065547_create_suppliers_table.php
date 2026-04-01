@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('contact')->nullable();
-            $table->string('address', 500);
+            $table->string('address', 500)->nullable();
             $table->timestamps();
         });
     }

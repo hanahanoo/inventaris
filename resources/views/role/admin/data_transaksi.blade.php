@@ -13,7 +13,7 @@
       <nav aria-label="breadcrumb">
         <ol class="breadcrumb mb-0">
           <li class="breadcrumb-item">
-            <a href="{{ route('dashboard') }}" class="fw-semibold text-decoration-none" style="color:#FF9800;">Dashboard</a>
+            <a href="{{ route('admin.dashboard') }}" class="fw-semibold text-decoration-none" style="color:#FF9800;">Dashboard</a>
           </li>
           <li class="breadcrumb-item active fw-semibold text-dark" aria-current="page">Data Transaksi Barang Keluar</li>
         </ol>
@@ -109,7 +109,7 @@
                           <td>{{ $item->scanned_at ? \Carbon\Carbon::parse($item->scanned_at)->format('d M Y H:i') : '-' }}</td>
                           <td>
                             <button class="btn btn-sm btn-outline-warning rounded-pill me-1 fw-semibold smooth-btn"
-                                    data-bs-toggle="modal" data-bs-target="#refundModal"
+                                    data-bs-toggle="modal" data-bs-target="#refundModal-{{ $item->id }}"
                                     data-cart-item-id="{{ $item->id }}" data-item-name="{{ $item->item->name }}"
                                     data-item-id="{{ $item->item->id }}" data-max-qty="{{ $item->quantity }}">
                               🔄 Refund
@@ -191,7 +191,7 @@
                           <td><span class="badge bg-success">Sudah Dipindai</span></td>
                           <td>
                             <button class="btn btn-sm btn-outline-warning rounded-pill me-1 fw-semibold smooth-btn"
-                                    data-bs-toggle="modal" data-bs-target="#refundModalGuest"
+                                    data-bs-toggle="modal" data-bs-target="#refundModalGuest-{{ $item->id }}"
                                     data-cart-item-id="{{ $item->id }}" data-item-name="{{ $item->item->name }}"
                                     data-item-id="{{ $item->item->id }}" data-max-qty="{{ $item->quantity }}">
                               🔄 Refund
@@ -227,49 +227,52 @@
 {{-- ===================== --}}
 {{-- MODAL REFUND PEGAWAI --}}
 {{-- ===================== --}}
-<div class="modal fade" id="refundModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg rounded-4">
-      <form id="refundFormPegawai" action="{{ route('admin.pegawai.refund') }}" method="POST">
-        @csrf
-        <div class="modal-header text-white" style="background:linear-gradient(90deg, #FF9800, #FFB74D);">
-          <h5 class="modal-title fw-bold"><i class="bi bi-arrow-counterclockwise me-2"></i> Refund Barang</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <input type="hidden" name="cart_item_id" id="refundCartItemId">
-          <input type="hidden" name="item_id" id="refundItemId">
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Nama Barang</label>
-            <input type="text" class="form-control rounded-3" id="refundItemName" readonly>
+@foreach($finishedCarts as $cart)
+  @foreach($cart->cartItems as $item)
+  <div class="modal fade" id="refundModal-{{ $item->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <form id="refundFormPegawai" action="{{ route('admin.pegawai.refund') }}" method="POST">
+          @csrf
+          <div class="modal-header text-white" style="background:linear-gradient(90deg, #FF9800, #FFB74D);">
+            <h5 class="modal-title fw-bold"><i class="bi bi-arrow-counterclockwise me-2"></i> Refund Barang</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Jumlah Refund <span class="text-danger">*</span></label>
-            <input type="number" name="qty" id="refundQty" class="form-control rounded-3" min="1" required
-                   oninput="validateRefundQty(this)">
-            <div class="form-text">
-              <span class="text-muted">Maksimal refund: </span>
-              <span id="maxQty" class="fw-bold text-warning">0</span>
-              <span id="qtyError" class="text-danger small d-none">❌ Jumlah refund melebihi batas maksimal</span>
+          <div class="modal-body">
+            <input type="hidden" name="cart_item_id" id="refundCartItemId">
+            <input type="hidden" name="item_id" id="refundItemId">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Nama Barang</label>
+              <input type="text" class="form-control rounded-3" id="refundItemName" value="{{ $item->item->name }}" readonly>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Jumlah Refund <span class="text-danger">*</span></label>
+              <input type="number" name="qty" id="refundQty" class="form-control rounded-3" min="1" required
+                    oninput="validateRefundQty(this)">
+              <div class="form-text">
+                <span class="text-muted">Maksimal refund: </span>
+                <span id="maxQty" class="fw-bold text-warning">{{ $item->quantity }}</span>
+                <span id="qtyError" class="text-danger small d-none">❌ Jumlah refund melebihi batas maksimal</span>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Kode Barang (Scan) <span class="text-danger">*</span></label>
+              <input type="text" name="code" class="form-control rounded-3" placeholder="Scan barcode barang" required>
             </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Kode Barang (Scan) <span class="text-danger">*</span></label>
-            <input type="text" name="code" class="form-control rounded-3" placeholder="Scan barcode barang" required>
+          <div class="modal-footer bg-light">
+            <button type="submit" id="submitRefundPegawai" class="btn text-white rounded-pill fw-semibold px-3"
+                    style="background-color:#FF9800;">
+              ✅ Proses Refund
+            </button>
+            <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Batal</button>
           </div>
-        </div>
-        <div class="modal-footer bg-light">
-          <button type="submit" id="submitRefundPegawai" class="btn text-white rounded-pill fw-semibold px-3"
-                  style="background-color:#FF9800;">
-            ✅ Proses Refund
-          </button>
-          <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Batal</button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   </div>
-</div>
-
+  @endforeach
+@endforeach
 {{-- MODAL REFUND GUEST --}}
 <div class="modal fade" id="refundModalGuest" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">

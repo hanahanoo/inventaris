@@ -15,29 +15,28 @@ class SearchController extends Controller
     public function index(Request $request)
     {
         $query = $request->input('q');
-        $kategori = $request->input('kategori');
+        $categoryId = $request->input('category_id');
 
         $items = Item::with('category')
-        ->when(!$query, function ($q) {
-            $q->where('stock', '>', 0);
-        })
-            ->when($query, function ($q) use ($query) {
-                $q->where(function ($sub) use ($query) {
-                    $sub->where('name', 'LIKE', "%{$query}%")
-                        ->orWhereHas('category', function ($cat) use ($query) {
-                            $cat->where('name', 'LIKE', "%{$query}%");
-                        });
-                });
+            ->when(!$query, function ($q) {
+                $q->where('stock', '>', 0);
             })
-            ->when($kategori && $kategori !== 'none', function ($q) use ($kategori) {
-                $q->whereHas('category', function ($cat) use ($kategori) {
-                    $cat->where('name', $kategori);
-                });
+            ->when($query, function ($q) use ($query) {
+                $q->where('name', 'LIKE', "%{$query}%");
+            })
+            ->when($categoryId, function ($q) use ($categoryId) {
+                $q->where('category_id', $categoryId);
             })
             ->latest()
             ->paginate(12);
 
         $categories = Category::all();
+
+        // JIKA REQUEST ADALAH AJAX
+        if ($request->ajax()) {
+            return view('role.pegawai.partials.product_list', compact('items'))->render();
+        }
+
         return view('role.pegawai.produk', compact('items', 'categories'))
             ->with('search', $query);
     }

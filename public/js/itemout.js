@@ -212,9 +212,30 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("💾 Release result:", data);
 
         if (!data.success) {
-          Swal.fire("Gagal", data.message || "Gagal menyimpan hasil scan.", "error");
-          return;
-        }
+          // Jika backend mengirimkan error tipe stok kurang
+          if (data.error_type === 'INSUFFICIENT_STOCK') {
+              Swal.fire({
+                  title: 'Stok Tidak Cukup!',
+                  text: data.message + " Ingin menolak permintaan ini agar keranjang bersih kembali?",
+                  icon: 'warning',
+                  showCancelButton: true,
+                  confirmButtonColor: '#d33', // Merah untuk Reject
+                  cancelButtonColor: '#3085d6', 
+                  confirmButtonText: 'Ya, Tolak Permintaan',
+                  cancelButtonText: 'Batal (Cek Manual)',
+                  backdrop: `rgba(0,0,0,0.4)`
+              }).then((result) => {
+                  if (result.isConfirmed) {
+                      // Panggil fungsi reject yang kita buat di bawah
+                      handleReject(cartId); 
+                  }
+              });
+          } else {
+              // Error umum lainnya
+              Swal.fire("Gagal", data.message || "Gagal menyimpan hasil scan.", "error");
+          }
+          return; // Stop agar tidak menjalankan efek sukses
+      }
 
         delete scannedItems[cartId];
 
@@ -249,4 +270,38 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   });
+  // Taruh sebelum penutup }); paling bawah script
+  async function handleReject(cartId) {
+      try {
+          Swal.fire({ title: 'Memproses...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+          const res = await fetch(`/admin/itemout/reject/${cartId}`, {
+              method: "POST",
+              headers: {
+                  "Content-Type": "application/json",
+                  "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+              }
+          });
+
+          const data = await res.json();
+          if (data.success) {
+              if (data.can_continue) {
+                  Swal.fire({
+                      title: "Item Ditolak",
+                      text: data.message,
+                      icon: "info",
+                      confirmButtonText: "Proses Sisa Barang"
+                  }).then(() => {
+                      // Reload untuk memperbarui tampilan tabel di modal (menghilangkan item yang reject)
+                      location.reload(); 
+                  });
+              } else {
+                  Swal.fire("Selesai", "Semua item ditolak, keranjang ditutup.", "success")
+                      .then(() => location.reload());
+              }
+          }
+      } catch (err) {
+          Swal.fire("Error", "Gagal reject.", "error");
+      }
+  }
 });

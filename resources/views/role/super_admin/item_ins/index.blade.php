@@ -6,7 +6,7 @@
   <div class="bg-white shadow-sm rounded-4 px-4 py-3 mb-4 d-flex flex-wrap justify-content-between align-items-center gap-3 smooth-fade">
     <div class="d-flex align-items-center flex-wrap gap-2">
       <i class="bi bi-box-arrow-in-down fs-5" style="color:#FF9800;"></i>
-      <a href="{{ route('dashboard') }}" class="breadcrumb-link fw-semibold text-decoration-none" style="color:#FF9800;">Dashboard</a>
+      <a href="{{ route('super_admin.dashboard') }}" class="breadcrumb-link fw-semibold text-decoration-none" style="color:#FF9800;">Dashboard</a>
       <span class="text-muted">/</span>
       <span class="fw-semibold text-dark">Daftar Barang Masuk</span>
     </div>

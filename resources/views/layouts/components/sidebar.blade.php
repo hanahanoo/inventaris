@@ -144,7 +144,7 @@
             </a>
         </li>
 
-        <li class="menu-item {{ Route::is('admin.guests.index') ? 'active' : '' }}">
+        <li class="menu-item {{ Route::is('admin.guests.index', 'admin.produk.byGuest') ? 'active' : '' }} ">
             <a href="{{ route('admin.guests.index') }}" class="menu-link d-flex align-items-center text-white position-relative">
                 <i class="ri ri-user-line me-2"></i>
                 <span>List Guest</span>
