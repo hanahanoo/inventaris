@@ -108,7 +108,7 @@
                 <span>List Pengguna</span>
             </a>
         </li>
-        <li class="menu-item {{ Route::is('super_admin.export.index') ? 'active' : '' }}">
+        <li class="menu-item {{ Route::is('super_admin.export.index', 'super_admin.kop_surat.index', 'super_admin.kop_surat.create', 'super_admin.kop_surat.edit') ? 'active' : '' }}">
             <a href="{{ route('super_admin.export.index') }}" class="menu-link d-flex align-items-center text-white position-relative">
                 <i class="ri ri-download-2-line me-2"></i>
                 <span>Ekspor Data</span>

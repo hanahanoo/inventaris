@@ -70,6 +70,7 @@
       </div>
 
       {{-- 🧾 RINGKASAN BARANG --}}
+      @if($item->expired_at)
       <div class="row g-4 my-4">
         <div class="col-md-4">
           <div class="card border-0 shadow-sm h-100 rounded-4 text-center p-3" style="background:#FFF3E0;">
@@ -99,8 +100,22 @@
           </div>
         </div>
       </div>
+      @else
+      <div class="row g-4 my-4">
+        <div class="col-md-12">
+          <div class="card border-0 shadow-sm h-100 rounded-4 text-center p-3" style="background:#FFF3E0;">
+            <div class="icon mb-3">
+              <i class="ri-stack-fill fs-2 text-warning"></i>
+            </div>
+            <h6 class="fw-semibold text-dark">Stok Barang</h6>
+            <h4 class="fw-bold text-dark">{{ $item->stock }}</h4>
+          </div>
+        </div>
+      </div>
+      @endif
 
       {{-- 📊 TABEL DATA --}}
+      @if($item->expired_at)
       <div class="table-responsive mt-4">
         <table class="table table-hover align-middle text-center mb-0">
           <thead style="background:#FFF3CD;">
@@ -121,6 +136,7 @@
           </tbody>
         </table>
       </div>
+      @endif
 
       {{-- 🧾 DETAIL TAMBAHAN --}}
       <div class="mt-5">
