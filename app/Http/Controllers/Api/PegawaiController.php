@@ -18,6 +18,19 @@ class PegawaiController extends Controller
         $this->pegawaiRepository = $pegawaiRepository;
     }
 
+    public function getProdukApi()
+    {
+        // Mengambil data dari tabel items
+        $produk = \DB::table('items')
+            ->select('id', 'name', 'stock', 'price', 'image')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $produk
+        ]);
+    }
+
     public function index(Request $request)
     {
         $range = $request->get('range', 'week');
