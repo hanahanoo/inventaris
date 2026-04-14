@@ -16,15 +16,18 @@ class BarangMasukExport implements FromCollection, WithHeadings
                 return [
                     'ID' => $row->id,
                     'Nama Barang' => $row->item->name,
-                    'Jumlah' => $row->quantity,
-                    'Harga (Rp)' => $row->price,
+                    'Supplier' => $row->supplier->name,
                     'Tanggal Masuk' => $row->created_at->format('d-m-Y'),
+                    'Jumlah' => $row->quantity,
+                    'Satuan' => $row->item->unit->name,
+                    'Harga Satuan(Rp)' => 'Rp ' . number_format($row->item->price, 0, ',', '.'),
+                    'Total Harga(Rp)' => 'Rp ' . number_format($row->total_price, 0, ',', '.'),
                 ];
             });
     }
 
     public function headings(): array
     {
-        return ['ID', 'Nama Barang', 'Jumlah', 'Harga (Rp)', 'Tanggal Masuk'];
+        return ['ID', 'Nama Barang', 'Supplier', 'Tanggal Masuk', 'Jumlah', 'Satuan', 'Harga Satuan(Rp)', 'Total Harga(Rp)'];
     }
 }

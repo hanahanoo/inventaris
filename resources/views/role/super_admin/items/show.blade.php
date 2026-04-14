@@ -70,7 +70,7 @@
       </div>
 
       {{-- 🧾 RINGKASAN BARANG --}}
-      @if($item->expired_at)
+      @if($expiredCount > 0 || $nonExpiredCount > 0)
       <div class="row g-4 my-4">
         <div class="col-md-4">
           <div class="card border-0 shadow-sm h-100 rounded-4 text-center p-3" style="background:#FFF3E0;">
@@ -115,7 +115,7 @@
       @endif
 
       {{-- 📊 TABEL DATA --}}
-      @if($item->expired_at)
+      @if($expiredCount > 0 || $nonExpiredCount > 0)
       <div class="table-responsive mt-4">
         <table class="table table-hover align-middle text-center mb-0">
           <thead style="background:#FFF3CD;">
