@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Repositories\Eloquent\PegawaiRepository;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use App\Models\Notification;
+use App\Repositories\Eloquent\PegawaiRepository;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PegawaiController extends Controller
 {
@@ -20,6 +21,11 @@ class PegawaiController extends Controller
 
     public function getProdukApi()
     {
+        $authError = $this->authorizePegawaiUser();
+        if ($authError) {
+            return $authError;
+        }
+
         // Mengambil data dari tabel items
         $produk = \DB::table('items')
             ->select('id', 'name', 'stock', 'price', 'image')
@@ -33,13 +39,13 @@ class PegawaiController extends Controller
 
     public function index(Request $request)
     {
+        $authError = $this->authorizePegawaiUser();
+        if ($authError) {
+            return $authError;
+        }
+
         $range = $request->get('range', 'week');
         $history = $this->pegawaiRepository->getUserRequestHistory($range);
-
-        // Pastikan user sudah login
-        if (!Auth::check()) {
-            return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu.');
-        }
 
         $user = Auth::user();
 
@@ -71,8 +77,6 @@ class PegawaiController extends Controller
             $history = ['labels' => [], 'data' => []];
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
-
         return response()->json([
             'success' => true,
             'history' => $history,
@@ -85,9 +89,9 @@ class PegawaiController extends Controller
 
     public function readNotifications()
     {
-        // Gunakan facade Auth, bukan helper langsung
-        if (!Auth::check()) {
-            return response()->json(['success' => false, 'message' => 'User not authenticated']);
+        $authError = $this->authorizePegawaiUser();
+        if ($authError) {
+            return $authError;
         }
 
         Notification::where('user_id', Auth::id())
@@ -109,4 +113,36 @@ class PegawaiController extends Controller
     public function edit(string $id) {}
     public function update(Request $request, string $id) {}
     public function destroy(string $id) {}
+
+    private function authorizePegawaiUser(): ?JsonResponse
+    {
+        if (!Auth::check()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
+        $user = Auth::user();
+
+        if ($user->role !== 'pegawai') {
+            $user->currentAccessToken()?->delete();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses API ini hanya untuk pegawai.',
+            ], 403);
+        }
+
+        if ($user->is_banned) {
+            $user->currentAccessToken()?->delete();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun pegawai ini sedang diblokir.',
+            ], 403);
+        }
+
+        return null;
+    }
 }
